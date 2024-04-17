@@ -9,3 +9,50 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(Lahman)
+head(HallOfFame, 3)
+View(HallOfFame)
+library(rvest)
+url <- "https://www.baseball-reference.com/awards/hof_2023.shtml"
+html <- read_html(url)
+tables <- html_table(html)
+hof_2023 <- tables[[1]]
+View(hof_2023)
+```
+ in my new scraped data set i'm going to have to go in a create and new variables like year id(just the year), playerID( which will be either a new ID i have to create or Ill have to each through the hall of fame data set and see this they already have a player ID), voted by( which will all be BBWAA), ballots(will be 389), needed(which is 292), votes(which is already in new data set), inducted (which will be yes id votes > needed), category( i believe they are all players), needed_notes( every entry in this column is NA so i believe these entries will be as well)
+ 
+```{r}
+library(tidyverse)
+hof_2023 <- hof_2023[-1, ]
+
+
+#createing new names of the static variables
+hof_2023$yearID <- 2023
+hof_2023$votedBy <- "BBWAA"
+hof_2023$ballots <- 389
+hof_2023$needed <- 292
+hof_2023$category <- "Player"
+hof_2023$needed_note <- NA
+
+#renaming to playerId
+
+hof_2023[2] <- gsub("X-", "", hof_2023[2])
+
+last_names <- sapply(strsplit(hof_2023[2], " "), tail, 1)
+
+
+player_ID <- People %>% filter(nameLast == last_names)
+
+hof_2023$playerID <- player_ID$playerID
+
+hof_2023$playerID <- mapply(generate_playerID, hof_2023[,2])
+head(hof_2023)
+
+
+
+```
+ 
+ 
+ 
+ 
