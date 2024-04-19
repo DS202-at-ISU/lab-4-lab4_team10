@@ -26,7 +26,7 @@ View(hof_2023)
 library(rvest)
 library(dplyr)
 
-colnames(hof_2023) <- c("Rk", "Name", "YoB", "Votes", "%vote", 
+colnames(hof_2023) <- c("Rk", "Name", "YoB", "votes", "%vote", 
                         "HOFm", "HOFs", "Yrs", "WAR", "WAR7", "JAWS", "Jpos",
                         "G", "AB", "R", "H", "HR", "RBI", "SB", "BB", 
                         "BA", "OBP", "SLG", "OPS", "OPS+", "W", "L", 
@@ -72,12 +72,25 @@ hof_2023 <- merge(hof_2023, people_names, by = "First Lastname", all.x = TRUE)
 
 final_2023 <- hof_2023 %>% select(
   playerID, yearID, votedBy, 
-  ballots, needed, Votes, 
+  ballots, needed, votes, 
   inducted, category, needed_note 
   )
 view(final_2023)
  
 ```
  
- After atempting to clean the data and shape it I found difficulties especially when trying to get the players ID. especially with player francisco rodriguez (because there are two in the People data set) as well as with Todd Helton because the HOF at the end messed with finding the player ID even after trying to get rid of and trailing whitespace. 
+ After attempting to clean the data and shape it I found difficulties especially when trying to get the players ID. especially with player Francisco Rodriguez (because there are two in the People data set) as well as with Todd Helton because the HOF at the end messed with finding the player ID even after trying to get rid of and trailing white-space. 
  
+ 
+ 
+ This last section is just concantonating my cleaned data set into the hall of fame data set and then creating a new HallOfFame csv into the repo.
+ 
+```{r}
+final_data <- rbind(HallOfFame, final_2023)
+
+write.csv(final_data, "HallOfFame.csv", row.names=FALSE)
+
+
+```
+
+

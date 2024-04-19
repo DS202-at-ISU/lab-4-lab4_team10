@@ -29,3 +29,26 @@ hof %>%
   xlim(c(2000, 2022)) +
   ylab("Percent of votes")
 ```
+existing data frame: 
+
+```{r}
+HallOfFame %>% 
+  ggplot(aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  xlim(c(1936, 2022))
+
+```
+
+
+
+updated data frame: 
+
+```{r}
+HallOfFameUpdated <- read.csv("HallOfFame.csv")
+
+HallOfFameUpdated %>% 
+  ggplot(aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  xlim(c(1936, 2023))
+
+```
