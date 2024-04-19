@@ -23,36 +23,61 @@ View(hof_2023)
  in my new scraped data set i'm going to have to go in a create and new variables like year id(just the year), playerID( which will be either a new ID i have to create or Ill have to each through the hall of fame data set and see this they already have a player ID), voted by( which will all be BBWAA), ballots(will be 389), needed(which is 292), votes(which is already in new data set), inducted (which will be yes id votes > needed), category( i believe they are all players), needed_notes( every entry in this column is NA so i believe these entries will be as well)
  
 ```{r}
-library(tidyverse)
-hof_2023 <- hof_2023[-1, ]
+library(rvest)
+library(dplyr)
+
+colnames(hof_2023) <- c("Rk", "Name", "YoB", "Votes", "%vote", 
+                        "HOFm", "HOFs", "Yrs", "WAR", "WAR7", "JAWS", "Jpos",
+                        "G", "AB", "R", "H", "HR", "RBI", "SB", "BB", 
+                        "BA", "OBP", "SLG", "OPS", "OPS+", "W", "L", 
+                        "ERA", "ERA+", "WHIP", "G_pitch", "GS", "SV", 
+                        "IP", "H_pitch", "HR_pitch", "BB_pitch", "SO_pitch", 
+                        "Pos_summary")
 
 
-#createing new names of the static variables
+hof_2023 <- hof_2023[-1, ] 
+
+hof_2023$`%vote` <- readr::parse_number(hof_2023$`%vote`)
+
+
 hof_2023$yearID <- 2023
-hof_2023$votedBy <- "BBWAA"
-hof_2023$ballots <- 389
-hof_2023$needed <- 292
-hof_2023$category <- "Player"
-hof_2023$needed_note <- NA
+  hof_2023$votedBy <- "BBWAA"
+  hof_2023$ballots <- 389
+  hof_2023$needed <- 292
+  hof_2023$inducted <- ifelse(hof_2023$`%vote` >= 75.06, "Y", "N")
+  hof_2023$category <- "Player"
+  hof_2023$needed_note <- NA
+# Remove any special characters or additional prefix from the names
+hof_2023$Name <- gsub("^X-", "", hof_2023$Name)
+hof_2023$Name <- gsub("á", "a", hof_2023$Name)
+hof_2023$Name <- gsub("í", "i", hof_2023$Name)
+hof_2023$Name <- gsub("J.J", "J. J", hof_2023$Name)
+hof_2023$Name <- gsub("R.A", "R. A", hof_2023$Name)
+hof_2023$Name <- gsub("HOF", "", hof_2023$Name)
+hof_2023$Name <- sub("\\s+$", "", hof_2023$Name)
 
-#renaming to playerId
+# Create full names in hof_2023
+hof_2023$`First Lastname` <- hof_2023$Name
 
-hof_2023[2] <- gsub("X-", "", hof_2023[2])
+# Load the People dataset and find playerID
+full_names <- People %>% mutate(
+  `First Lastname`=paste(nameFirst, nameLast))
+people_names <- People %>% select(playerID, `First Lastname`)
 
-last_names <- sapply(strsplit(hof_2023[2], " "), tail, 1)
-
-
-player_ID <- People %>% filter(nameLast == last_names)
-
-hof_2023$playerID <- player_ID$playerID
-
-hof_2023$playerID <- mapply(generate_playerID, hof_2023[,2])
-head(hof_2023)
-
+# Match playerID
+hof_2023 <- merge(hof_2023, people_names, by = "First Lastname", all.x = TRUE)
+  
+  # Create new variables with fixed values
 
 
+final_2023 <- hof_2023 %>% select(
+  playerID, yearID, votedBy, 
+  ballots, needed, Votes, 
+  inducted, category, needed_note 
+  )
+view(final_2023)
+ 
 ```
  
- 
- 
+ After atempting to clean the data and shape it I found difficulties especially when trying to get the players ID. especially with player francisco rodriguez (because there are two in the People data set) as well as with Todd Helton because the HOF at the end messed with finding the player ID even after trying to get rid of and trailing whitespace. 
  
