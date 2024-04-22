@@ -64,11 +64,13 @@ full_names <- People %>% mutate(
   `First Lastname`=paste(nameFirst, nameLast))
 people_names <- People %>% select(playerID, `First Lastname`)
 
+
+
 # Match playerID
 hof_2023 <- merge(hof_2023, people_names, by = "First Lastname", all.x = TRUE)
   
   # Create new variables with fixed values
-
+hof_2023 <- hof_2023[hof_2023$playerID != "rodrifr04", ]
 
 final_2023 <- hof_2023 %>% select(
   playerID, yearID, votedBy, 
