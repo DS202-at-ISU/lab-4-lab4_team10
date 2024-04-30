@@ -1,0 +1,117 @@
+---
+title: "progress-report-dolan.Rmd"
+author: "Jesse Dolan"
+date: "2024-04-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load necessary libraries
+library(Lahman)  # For baseball statistics
+
+head(HallOfFame, 3)
+View(HallOfFame)
+
+library(rvest)   # For web scraping
+library(dplyr)   # For data manipulation
+library(stringi)
+library(stringr)
+# Load or read the People dataset to ensure it is initialized
+# Example: People <- Lahman::People  (Adjust this depending on your setup)
+
+# Display the first few rows and column names to confirm structure
+head(People)  # See if the dataset is loaded and its structure
+colnames(People)  # Check available columns
+
+# If necessary, ensure 'First Lastname' column exists
+if (!"First Lastname" %in% colnames(People)) {
+    # Create 'First Lastname' in People
+    People <- People %>% mutate(
+        `First Lastname` = paste(nameFirst, nameLast)
+    )
+}
+
+# Web scrape the Hall of Fame 2023 data
+url <- "https://www.baseball-reference.com/awards/hof_2023.shtml"
+html <- read_html(url)
+tables <- html_table(html)
+hof_2023 <- tables[[1]]
+
+View(hof_2023)
+```
+
+
+```{r}
+# Adjust column names for hof_2023
+colnames(hof_2023) <- c("Rk", "Name", "YoB", "votes", "%vote", 
+                        "HOFm", "HOFs", "Yrs", "WAR", "WAR7", "JAWS", "Jpos",
+                        "G", "AB", "R", "H", "HR", "RBI", "SB", "BB", 
+                        "BA", "OBP", "SLG", "OPS", "OPS+", "W", "L", 
+                        "ERA", "ERA+", "WHIP", "G_pitch", "GS", "SV", 
+                        "IP", "H_pitch", "HR_pitch", "BB_pitch", "SO_pitch")
+
+# Data cleaning for hof_2023
+hof_2023 <- hof_2023[-1, ]  # Remove the first row
+hof_2023$`%vote` <- readr::parse_number(hof_2023$`%vote`)
+
+# Create new fields with fixed values
+hof_2023$yearID <- 2023
+hof_2023$votedBy <- "BBWAA"
+hof_2023$ballots <- 389
+hof_2023$needed <- 292
+hof_2023$inducted <- ifelse(hof_2023$`%vote` >= 75.06, "Y", "N")
+hof_2023$category <- "Player"
+hof_2023$needed_note <- NA
+
+# Create a function to normalize accented characters
+normalize_name <- function(name) {
+  # Normalize all accented characters to their base form
+  normalized_name <- stri_trans_general(name, "Latin-ASCII")
+
+  # Trim any leading or trailing whitespace
+  normalized_name <- stri_trim_both(normalized_name)
+
+  return(normalized_name)
+}
+
+# Apply the normalization function to the 'Name' column
+hof_2023$Name <- sapply(hof_2023$Name, normalize_name)
+
+# Apply the clean_name function to the 'Name' column
+hof_2023$Name <- sapply(hof_2023$Name, normalize_name)
+
+# Create a 'First Lastname' column in hof_2023
+hof_2023$`First Lastname` = hof_2023$Name
+
+# Extract necessary fields from People for playerID matching
+people_names <- People %>% select(playerID, `First Lastname`)
+
+# Match playerIDs in hof_2023 based on 'First Lastname'
+hof_2023 <- merge(hof_2023, people_names, by = "First Lastname", all.x = TRUE)
+
+# Fix data inconsistencies or specific cases
+hof_2023 <- hof_2023[hof_2023$playerID != "rodrifr04", ]
+
+# Create the final dataset for 2023 Hall of Fame data
+final_2023 <- hof_2023 %>% select(
+  playerID, yearID, votedBy, 
+  ballots, needed, votes, 
+  inducted, category, needed_note 
+)
+
+# View the final dataset
+View(final_2023)
+```
+
+```{r}
+# Concatenate the final_2023 dataset with the existing Hall of Fame dataset
+final_data <- rbind(HallOfFame, final_2023)
+
+# Save the combined data to a CSV file
+write.csv(final_data, "HallOfFame.csv", row.names = FALSE)
+```
+
